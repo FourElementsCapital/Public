@@ -1,1 +1,2 @@
 # Public
+This directory serves as sharing public information from Four Elements, it is being used to share information with the wide public or share libraries, content for public use. Please refer to each directory for more information.
