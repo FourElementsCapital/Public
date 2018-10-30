@@ -1,0 +1,771 @@
+diff -Naur rstudio-1.1.453-Orig/src/cpp/desktop/CMakeLists.txt rstudio-1.1.453/src/cpp/desktop/CMakeLists.txt
+--- rstudio-1.1.453-Orig/src/cpp/desktop/CMakeLists.txt	2018-05-15 02:19:30.000000000 +0800
++++ rstudio-1.1.453/src/cpp/desktop/CMakeLists.txt	2018-10-24 12:18:28.467689763 +0800
+@@ -153,6 +153,7 @@
+ # source files
+ set(DESKTOP_SOURCE_FILES
+   DesktopAboutDialog.cpp
++  DesktopAboutAlphienDialog.cpp
+   DesktopBrowserWindow.cpp
+   DesktopCommandInvoker.cpp
+   DesktopDataUriNetworkReply.cpp
+@@ -230,6 +231,7 @@
+ qt5_wrap_cpp(MOC_DESKTOP_SOURCE_FILES ${MOC_DESKTOP_HEADER_FILES})
+ qt5_wrap_ui(DESKTOP_UI_SOURCES
+    DesktopAboutDialog.ui
++   DesktopAboutAlphienDialog.ui
+    DesktopChooseRHome.ui
+    DesktopInputDialog.ui
+ )
+diff -Naur rstudio-1.1.453-Orig/src/cpp/desktop/DesktopGwtCallback.cpp rstudio-1.1.453/src/cpp/desktop/DesktopGwtCallback.cpp
+--- rstudio-1.1.453-Orig/src/cpp/desktop/DesktopGwtCallback.cpp	2018-05-15 02:19:30.000000000 +0800
++++ rstudio-1.1.453/src/cpp/desktop/DesktopGwtCallback.cpp	2018-10-24 12:18:28.467689763 +0800
+@@ -38,6 +38,7 @@
+ #include <core/r_util/RUserData.hpp>
+ 
+ #include "DesktopAboutDialog.hpp"
++#include "DesktopAboutAlphienDialog.hpp"
+ #include "DesktopOptions.hpp"
+ #include "DesktopBrowserWindow.hpp"
+ #include "DesktopWindowTracker.hpp"
+@@ -793,6 +794,13 @@
+    desktop::openUrl(url);
+ }
+ 
++void GwtCallback::showAboutAlphienDialog() 
++{ 
++   AboutAlphienDialog* aboutAlphien = new AboutAlphienDialog(pOwner_->asWidget()); 
++   aboutAlphien->setAttribute(Qt::WA_DeleteOnClose); 
++   aboutAlphien->show(); 
++}
++
+ void GwtCallback::showAboutDialog()
+ {
+    // WA_DeleteOnClose
+diff -Naur rstudio-1.1.453-Orig/src/cpp/desktop/DesktopGwtCallback.hpp rstudio-1.1.453/src/cpp/desktop/DesktopGwtCallback.hpp
+--- rstudio-1.1.453-Orig/src/cpp/desktop/DesktopGwtCallback.hpp	2018-05-15 02:19:30.000000000 +0800
++++ rstudio-1.1.453/src/cpp/desktop/DesktopGwtCallback.hpp	2018-10-24 12:18:28.467689763 +0800
+@@ -141,6 +141,7 @@
+                          int selectionStart,
+                          int selectionLength);
+ 
++   void showAboutAlphienDialog();
+    void showAboutDialog();
+    void bringMainFrameToFront();
+    void bringMainFrameBehindActive();
+diff -Naur rstudio-1.1.453-Orig/src/cpp/desktop-mac/MainFrameMenu.mm rstudio-1.1.453/src/cpp/desktop-mac/MainFrameMenu.mm
+--- rstudio-1.1.453-Orig/src/cpp/desktop-mac/MainFrameMenu.mm	2018-05-15 02:19:30.000000000 +0800
++++ rstudio-1.1.453/src/cpp/desktop-mac/MainFrameMenu.mm	2018-10-24 12:18:28.467689763 +0800
+@@ -290,6 +290,16 @@
+ 
+    [appMenu addItem: [NSMenuItem separatorItem]];
+ 
++   // "About AlphienStudio"
++   NSMenuItem* aboutMenuItem = [[NSMenuItem alloc]
++                                initWithTitle: @"About AlphienStudio"
++                                action: @selector(showAboutAlphien:)
++                                keyEquivalent: @""];
++   [aboutMenuItem setTarget: self];
++   [appMenu addItem: aboutMenuItem];
++
++   [appMenu addItem: [NSMenuItem separatorItem]];
++
+    // "Preferences..."
+    NSMenuItem* prefsMenuItem = [[NSMenuItem alloc]
+                                 initWithTitle: @"Preferences\u2026"
+@@ -425,6 +435,10 @@
+    [[NSApp mainWindow] makeKeyAndOrderFront: self];
+ }
+ 
++- (void) showAboutAlphien: (id) sender {
++   [[MainFrameController instance] invokeCommand: @"showAboutAlphienDialog"];
++}
++
+ - (void) showAbout: (id) sender {
+    [[MainFrameController instance] invokeCommand: @"showAboutDialog"];
+ }
+diff -Naur rstudio-1.1.453-Orig/src/cpp/session/resources/help_resources/index.htm rstudio-1.1.453/src/cpp/session/resources/help_resources/index.htm
+--- rstudio-1.1.453-Orig/src/cpp/session/resources/help_resources/index.htm	2018-05-15 02:19:30.000000000 +0800
++++ rstudio-1.1.453/src/cpp/session/resources/help_resources/index.htm	2018-10-24 12:20:18.224505311 +0800
+@@ -1,153 +1,263 @@
+-<!DOCTYPE html>
+ <html>
+ <head>
+-<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+-<title>Home</title>
+-
+-<style>
+-   body {
+-      font-family: "Lucida Grande", "Lucida Sans", "Segoe UI", Helvetica, sans-serif;
+-      font-size: 10pt;
+-      margin-left: 40px;
+-      margin-right: 30px;
+-      margin-top: 5px;
+-      padding-bottom: 25px;
+-   }
+-   
+-   td {
+-      vertical-align: top;
+-   }
+-   
+-   ul {
+-      padding-left: 0px;
+-      list-style: none;
+-      margin-bottom: 0px;
+-   }
+-   
+-   li {
+-      margin-bottom: 6px;
+-      color: rgb(45,134,247);
+-   }
+-   
+-   a {
+-      color: rgb(45,134,247);
+-   }
+-   
+-   a:link {
+-      text-decoration: none;
+-   }
+-   
+-   h3 {
+-      white-space: nowrap;
+-      font-weight: normal;
+-      color: rgb(50%, 50%, 50%);
+-      margin-top: 12px;
+-      font-size: 1.3em;
+-
+-   }
+-   
+-   h3 img {
+-      vertical-align: text-bottom;
+-   }
+-</style>
++	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
++	<title>Home</title>
++	<style>
++	body {
++		font-family: "Lucida Grande", "Lucida Sans", "Segoe UI", Helvetica, sans-serif;
++		font-size: 10pt;
++		margin-left: 30px;
++		margin-right: 30px;
++		margin-top: 2%;
++		padding-bottom: 25px;
++		word-wrap: break-word;
++	}
++
++	ul {
++		padding-left: 0px;
++		list-style: none;
++		margin-bottom: 0px;
++	}
++
++	li {
++		margin-bottom: 6px;
++		color: rgb(45, 134, 247);
++	}
++
++	a {
++		color: rgb(45, 134, 247);
++		font-size: 10.5pt;
++	}
++
++	a:link {
++		text-decoration: none;
++	}
++
++	h3 {
++		font-weight: normal;
++		color: rgb(50%, 50%, 50%);
++		margin-top: 12px;
++		font-size: 1.3em;
++	}
++
++	h6 {
++      	color: rgb(255, 105, 97);
++    }
++
++	h3 img {
++		vertical-align: text-bottom;
++	}
++
++	table {
++		width: 100%;
++		border-collapse: collapse;
++	}
++
++	td {
++		vertical-align: top;
++    	padding: 0.5% 0 0.5% 0%;
++	}
++
++	.card {
++		position: relative;
++		min-height: 200px;
++		background: #fff;
++		border-radius: 2px;
++		box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);    
++		padding: 1% 1% 3% 3%;
++    	margin-bottom: 4%
++	}
++
++	.card-left {    
++		display: inline-block;
++		margin: 0 2% 4% 0;    
++		min-height: 270px;
++	}
++
++  .card-mid {    
++		display: inline-block;
++		/*margin: 0 1.5% 4% 1.5%;    */
++		min-height: 270px;
++	}
++    
++	.card-right {    
++		display: inline-block;
++		margin: 0 0 4% 2%;    
++		min-height: 270px;
++	}
+ 
++	</style>
+ </head>
+ 
+ <body>
+-   
+-<table width="100%">
+-   <tbody>
+-      <tr>
+-         <td width="50%">
+-            <h3>
+-               <img src="r-2x.png" width="25" height="25"></img> 
+-               R Resources       
+-            </h3>
+-            <ul>
+-               <li><a href="https://www.rstudio.org/links/r-online-learning">Learning R Online</a></li>
+-               <li><a href="https://cran.rstudio.com/web/views/">CRAN Task Views</a></li>
+-               <li><a href="https://stackoverflow.com/questions/tagged/r">R on StackOverflow</a></li>
+-               <li><a href="https://www.rstudio.org/links/help-with-r">Getting Help with R</a></li>
+-            </ul>
+-         </td>
+-          <td width="50%">
+-            <h3>
+-            <img src="rstudio-2x.png" width="25" height="25"> 
+-            RStudio
+-            </h3>
+-            <ul>
+-               <li><a href="https://www.rstudio.org/links/rstudio-support">RStudio IDE Support</a></li>
+-               <li><a href="https://www.rstudio.org/links/community-forum">RStudio Community Forum</a></li>
+-               <li><a href="https://www.rstudio.org/links/cheat_sheets">RStudio Cheat Sheets</a></li>
+-               <li><a href="https://twitter.com/rstudiotips">RStudio Tip of the Day</a></li>
+-               <li><a href="https://www.rstudio.org/links/rstudio-r-packages">RStudio Packages</a></li>
+-               <li><a href="https://www.rstudio.org/links/rstudio-products">RStudio Products</a></li>
+-            </ul>
+-         </td>
+-      </tr>
+-   </tbody>
+-</table>   
+-   
+-  
+-<h3>Manuals</h3>
+-
+-<table cols="2" width="100%">
+-   
+-   
+-  <tr>
+-    <td width="50%">
+-    <a href="../manual/R-intro.html">An Introduction to R</a>
+-    </td>
+-    <td width="50%">
+-    <a href="../manual/R-lang.html">The R Language Definition</a>
+-    </td>
+-  </tr>
+-  <tr>
+-    <td width="50%">
+-    <a href="../manual/R-exts.html">Writing R Extensions</a>
+-    </td>
+-    <td width="50%">
+-    <a href="../manual/R-admin.html">R Installation and Administration</a>
+-    </td>
+-  </tr>  
+-  <tr>
+-    <td width="50%">
+-    <a href="../manual/R-data.html">R Data Import/Export</a>
++
++<table>
++	<tr>
++	<td width="27%" class="card card-left">
++		<h3>
++			<img src="package-2x.png" width="25" height="25"/> Alphien Packages
++			<h6> * Run [&nbsp;.sourceAlfunction()&nbsp;] command first to load Alphien Packages </h6>
++		</h3>
++		<ul>
++			<li><a href="https://studio.alphien.com/help/library/SinglePackageAl/html/00Index.html" target="_self">Alphien Package Documentation</a></li>
++			<li><a href="https://studio.alphien.com/help/library/SinglePackageAl/html/backtest.html" target="_self">Backtesting Function</a></li>
++			<li><a href="https://studio.alphien.com/help/library/SinglePackageAl/NEWS" target="_self">Changelog</a></li>
++		</ul>
+     </td>
+-    <td width="50%">
+-    <a href="../manual/R-ints.html">R Internals</a>
++    <td width="27%" class="card card-mid">
++        <h3>
++        	<img src="tools-2x.png" width="25" height="25" /> Tools
++        </h3>
++        <ul>
++	        <li><a href="https://alphien.com/idata/">Data Viewer</a></li>
++	        <li><a href="https://qlib.alphien.com/qlib/RFunctionEditor">QLib</a></li>
++	        <li><a href="https://wiki.alphien.com/ALwiki/Main_Menu">Alphien Wiki</a></li>
++	        <li><a href="https://alphachat.alphien.com">AlphaChat</a></li>
++	        <li><a href="https://alphien.com/mynotebooks">Notebooks</a></li>
++        </ul>
+     </td>
+-  </tr>
++    <td width="27%" class="card card-right">
++        <h3>
++        	<img src="community-2x.png" width="25" height="25" /> Community
++        </h3>
++        <ul>
++			<li><a href="https://alphien.com/blog/">Alphien Blog</a></li>
++			<li><a href="https://alphien.com/private/forum/">Alphien Forum</a></li>
++			<li><a href="https://alphien.com/support/">Alphien Support</a></li>
++			<li><a href="https://alphien.com/private/faq/">Alphien FAQ</a></li>
++			<li><a href="https://alphien.com/careers/">Careers</a></li>
++        </ul>
++	</td>
++   	</tr>
+ </table>
+ 
+-
+-<h3>Reference</h3>
+-
+-<table cols="2" width="100%">
+-<tr>
+-<td width="50%"><a href="../html/packages.html">Packages</a></td>
+-<td width="50%"><a href="../html/Search.html">Search Engine &amp; Keywords</a></td>
+-</tr>
++ <div class="card" style="width: 94%">
++	<table cols="2">
++		<tr>
++			<h3>
++         		<img src="alphienstudio-2x.png" width="25" height="25" /> Tutorials
++         	</h3>
++		</tr>
++		<tr> 
++			<td width="50%">
++			<a href="https://wiki.alphien.com/ALwiki/Beginner's_Guide">Beginner's Guide</a>
++			</td>
++			<td width="50%">
++			<a href="https://wiki.alphien.com/ALwiki/Guide_to_use_our_R_functions">Guide to use our R functions</a>
++			</td>
++		</tr>
++		<tr>
++			<td width="50%">
++			<a href="https://wiki.alphien.com/ALwiki/Commodity_Tutorial">Commodity Tutorial</a>
++			</td>
++			<td width="50%">
++			<a href="https://wiki.alphien.com/ALwiki/FX_Tutorial">FX Tutorial</a>
++			</td>
++			</tr>  
++		<tr>
++			<td width="50%">
++			<a href="https://wiki.alphien.com/ALwiki/Sample_strategies">Sample Strategies</a>
++			</td>
++		</tr>
++	</table> 
++</div>
++
++<table>
++	<tr>
++	<td width="43%" class="card card-left">
++		<h3>
++			R Resources       
++		</h3>
++         <ul>
++         	<li><a href="https://www.rstudio.org/links/r-online-learning">Learning R Online</a></li>
++            <li><a href="https://cran.rstudio.com/web/views/">CRAN Task Views</a></li>
++            <li><a href="https://stackoverflow.com/questions/tagged/r">R on StackOverflow</a></li>
++            <li><a href="https://www.rstudio.org/links/help-with-r">Getting Help with R</a></li>
++         </ul>
++      </td><td width="43%" class="card card-right">
++         <h3>
++         RStudio
++         </h3>
++         <ul>
++            <li><a href="https://www.rstudio.org/links/rstudio-support">RStudio IDE Support</a></li>
++            <li><a href="https://www.rstudio.org/links/community-forum">RStudio Community Forum</a></li>
++            <li><a href="https://www.rstudio.org/links/cheat_sheets">RStudio Cheat Sheets</a></li>
++            <li><a href="https://twitter.com/rstudiotips">RStudio Tip of the Day</a></li>
++            <li><a href="https://www.rstudio.org/links/rstudio-r-packages">RStudio Packages</a></li>
++            <li><a href="https://www.rstudio.org/links/rstudio-products">RStudio Products</a></li>
++         </ul>
++      </td>
++   </tr>
+ </table>
+ 
+-<h3>Miscellaneous Material</h3>
++<!-- rstudio-1.1.453/src/cpp/session/resources/manual/R-intro.html -->
+ 
+-<table cols="3" width="100%">
+-<tr>
+-<td width="33%"><a href="../html/about.html">About R</a> </td>
+-<td width="33%"><a href="../AUTHORS">Authors</a> </td>
+-<td width="33%"><a href="../html/resources.html">Resources</a></td>
+-</tr>
+-<tr>
+-<td width="33%"><a href="../COPYING">License</a></td>
+-<td width="33%"><a href="../manual/R-FAQ.html">FAQ</a> </td>
+-<td width="33%"><a href="../THANKS">Thanks</a> </td>
+-</tr>
+-<tr>
+-<td width="33%"><a href="../html/NEWS.html">NEWS</a></td>
+-<td width="33%"><a href="../html/UserManuals.html">User Manuals</a></td>
+-<td width="33%"><a href="http://developer.R-project.org/TechDocs">Technical papers</a></td>
+-</tr>
++<div class="card" style="width: 94%">
++	<table cols="2">
++		<tr>
++			<h3>Manuals</h3>
++		</tr>
++		<tr> 
++			<td width="50%">
++			<a href="../manual/R-intro.html">An Introduction to R</a>
++			</td>
++			<td width="50%">
++			<a href="../manual/R-lang.html">The R Language Definition</a>
++			</td>
++		</tr>
++		<tr>
++			<td width="50%">
++			<a href="../manual/R-exts.html">Writing R Extensions</a>
++			</td>
++			<td width="50%">
++			<a href="../manual/R-admin.html">R Installation and Administration</a>
++			</td>
++			</tr>  
++		<tr>
++			<td width="50%">
++			<a href="../manual/R-data.html">R Data Import/Export</a>
++			</td>
++			<td width="50%">
++			<a href="../manual/R-ints.html">R Internals</a>
++			</td>
++		</tr>
++	</table> 
++</div>
++
++
++
++<div class="card" style="min-height: 130px; width: 94%">
++	<table cols="2">
++		<tr>
++			<h3>Reference</h3>
++		</tr>
++		<tr>
++			<td width="50%"><a href="../html/packages.html">Packages</a></td>
++			<td width="50%"><a href="../html/Search.html">Search Engine &amp; Keywords</a></td>
++		</tr>
++	</table>
++</div>
++
++<div class="card" style="width: 94%">
++	<table cols="3">
++		<tr>
++			<h3>Miscellaneous Material</h3>
++		</tr>
++	<tr>
++		<td width="33%"><a href="../html/about.html">About R</a> </td>
++		<td width="33%"><a href="../AUTHORS">Authors</a> </td>
++		<td width="33%"><a href="../html/resources.html">Resources</a></td>
++	</tr>
++	<tr>
++		<!-- <td width="33%"><a href="../COPYING">License</a></td> -->
++		<td width="33%"><a href="../manual/R-FAQ.html">FAQ</a> </td>
++		<td width="33%"><a href="../THANKS">Thanks</a> </td>
++	</tr>
++	<tr>
++		<td width="33%"><a href="../html/NEWS.html">NEWS</a></td>
++		<td width="33%"><a href="../html/UserManuals.html">User Manuals</a></td>
++		<td width="33%"><a href="http://developer.R-project.org/TechDocs">Technical papers</a></td>
++	</tr>
+ </table>
+ 
+ #!js_callbacks#
+diff -Naur rstudio-1.1.453-Orig/src/gwt/src/org/rstudio/studio/client/application/Application.java rstudio-1.1.453/src/gwt/src/org/rstudio/studio/client/application/Application.java
+--- rstudio-1.1.453-Orig/src/gwt/src/org/rstudio/studio/client/application/Application.java	2018-05-15 02:19:30.000000000 +0800
++++ rstudio-1.1.453/src/gwt/src/org/rstudio/studio/client/application/Application.java	2018-10-24 12:18:28.467689763 +0800
+@@ -59,6 +59,7 @@
+ import org.rstudio.studio.client.application.model.ProductInfo;
+ import org.rstudio.studio.client.application.model.SessionSerializationAction;
+ import org.rstudio.studio.client.application.ui.AboutDialog;
++import org.rstudio.studio.client.application.ui.AboutAlphienDialog;
+ import org.rstudio.studio.client.application.ui.RStudioThemes;
+ import org.rstudio.studio.client.application.ui.RequestLogVisualization;
+ import org.rstudio.studio.client.common.GlobalDisplay;
+@@ -233,6 +234,24 @@
+    }
+    
+    @Handler
++   void onShowAboutAlphienDialog()
++   {
++      server_.getProductInfo(new ServerRequestCallback<ProductInfo>()
++      {
++         @Override
++         public void onResponseReceived(ProductInfo info)
++         {
++            AboutAlphienDialog aboutAlphien = new AboutAlphienDialog(info);
++            aboutAlphien.showModal();
++         }
++         @Override
++         public void onError(ServerError error)
++         {
++         }
++      });
++   }
++
++   @Handler
+    void onShowAboutDialog()
+    {
+       server_.getProductInfo(new ServerRequestCallback<ProductInfo>()
+@@ -250,6 +269,7 @@
+       });
+    }
+    
++   
+    public void onUnauthorized(UnauthorizedEvent event)
+    {
+       navigateToSignIn();
+diff -Naur rstudio-1.1.453-Orig/src/gwt/src/org/rstudio/studio/client/application/DesktopFrame.java rstudio-1.1.453/src/gwt/src/org/rstudio/studio/client/application/DesktopFrame.java
+--- rstudio-1.1.453-Orig/src/gwt/src/org/rstudio/studio/client/application/DesktopFrame.java	2018-05-15 02:19:30.000000000 +0800
++++ rstudio-1.1.453/src/gwt/src/org/rstudio/studio/client/application/DesktopFrame.java	2018-10-24 12:18:28.467689763 +0800
+@@ -107,6 +107,7 @@
+                         int selectionStart,
+                         int selectionLength, String okButtonCaption);
+ 
++   void showAboutAlphienDialog();
+    void showAboutDialog();
+    void bringMainFrameToFront();
+    void bringMainFrameBehindActive();
+diff -Naur rstudio-1.1.453-Orig/src/gwt/src/org/rstudio/studio/client/RStudio.java rstudio-1.1.453/src/gwt/src/org/rstudio/studio/client/RStudio.java
+--- rstudio-1.1.453-Orig/src/gwt/src/org/rstudio/studio/client/RStudio.java	2018-05-15 02:19:30.000000000 +0800
++++ rstudio-1.1.453/src/gwt/src/org/rstudio/studio/client/RStudio.java	2018-10-24 12:18:28.467689763 +0800
+@@ -46,6 +46,7 @@
+ import org.rstudio.core.client.widget.WizardResources;
+ import org.rstudio.core.client.widget.images.ProgressImages;
+ import org.rstudio.studio.client.application.ui.AboutDialogContents;
++import org.rstudio.studio.client.application.ui.AboutAlphienDialogContents;
+ import org.rstudio.studio.client.application.ui.appended.ApplicationEndedPopupPanel;
+ import org.rstudio.studio.client.application.ui.serializationprogress.ApplicationSerializationProgress;
+ import org.rstudio.studio.client.application.ui.support.SupportPopupMenu;
+@@ -284,6 +285,7 @@
+       WizardResources.INSTANCE.styles().ensureInjected();
+       NewProjectResources.INSTANCE.styles().ensureInjected();
+       AboutDialogContents.ensureStylesInjected();
++      AboutAlphienDialogContents.ensureStylesInjected();
+       CompileNotebookv2OptionsDialog.ensureStylesInjected();
+       PackratResolveConflictDialog.ensureStylesInjected();
+       PackratActionDialog.ensureStylesInjected();
+diff -Naur rstudio-1.1.453-Orig/src/gwt/src/org/rstudio/studio/client/workbench/commands/Commands.cmd.xml rstudio-1.1.453/src/gwt/src/org/rstudio/studio/client/workbench/commands/Commands.cmd.xml
+--- rstudio-1.1.453-Orig/src/gwt/src/org/rstudio/studio/client/workbench/commands/Commands.cmd.xml	2018-05-15 02:19:30.000000000 +0800
++++ rstudio-1.1.453/src/gwt/src/org/rstudio/studio/client/workbench/commands/Commands.cmd.xml	2018-10-24 12:18:28.471689792 +0800
+@@ -462,6 +462,7 @@
+ 
+       <menu label="_Help">
+          <cmd refid="helpHome"/>
++         <cmd refid="showAboutAlphienDialog"/> 
+          <cmd refid="showAboutDialog"/>
+          <cmd refid="checkForUpdates"/>
+          <separator/>
+@@ -2696,6 +2697,12 @@
+         desc="Quit the current R session"
+         windowMode="main"/>
+ 
++   <cmd id="showAboutAlphienDialog" 
++        label="About AlphienStudio..." 
++        menuLabel="_About AlphienStudio" 
++        rebindable="false" 
++        windowMode="main"/>
++
+    <cmd id="showAboutDialog"
+         label="About RStudio..."
+         menuLabel="_About RStudio"
+diff -Naur rstudio-1.1.453-Orig/src/gwt/src/org/rstudio/studio/client/workbench/commands/Commands.java rstudio-1.1.453/src/gwt/src/org/rstudio/studio/client/workbench/commands/Commands.java
+--- rstudio-1.1.453-Orig/src/gwt/src/org/rstudio/studio/client/workbench/commands/Commands.java	2018-05-15 02:19:30.000000000 +0800
++++ rstudio-1.1.453/src/gwt/src/org/rstudio/studio/client/workbench/commands/Commands.java	2018-10-24 12:18:28.471689792 +0800
+@@ -411,6 +411,7 @@
+    public abstract AppCommand raiseException2();
+    public abstract AppCommand activateHelp();
+    public abstract AppCommand layoutZoomHelp();
++   public abstract AppCommand showAboutAlphienDialog();
+    public abstract AppCommand showAboutDialog();
+    public abstract AppCommand checkForUpdates();
+    public abstract AppCommand helpUsingRStudio();
+diff -Naur rstudio-1.1.453-Orig/src/gwt/test/acesupport/harness.html rstudio-1.1.453/src/gwt/test/acesupport/harness.html
+--- rstudio-1.1.453-Orig/src/gwt/test/acesupport/harness.html	2018-05-15 02:19:30.000000000 +0800
++++ rstudio-1.1.453/src/gwt/test/acesupport/harness.html	2018-10-24 12:18:28.471689792 +0800
+@@ -1,6 +1,6 @@
+ <html>
+    <head>
+-      <title>RStudio JS Tests</title>
++      <title>AlphienStudio JS Tests</title>
+       <link rel="stylesheet" href="qunit/qunit-1.18.0.css" />
+       <link rel="stylesheet" type="text/css" href="../../src/org/rstudio/studio/client/workbench/views/source/editors/text/themes/tomorrow_night_bright.css" />
+    </head>
+diff -Naur rstudio-1.1.453-Orig/src/gwt/www/docs/keyboard.htm rstudio-1.1.453/src/gwt/www/docs/keyboard.htm
+--- rstudio-1.1.453-Orig/src/gwt/www/docs/keyboard.htm	2018-05-15 02:19:30.000000000 +0800
++++ rstudio-1.1.453/src/gwt/www/docs/keyboard.htm	2018-10-24 12:18:28.471689792 +0800
+@@ -2,7 +2,7 @@
+ 
+ <head>
+ 
+-<title>RStudio: Keyboard Shortcuts</title>
++<title>AlphienStudio: Keyboard Shortcuts</title>
+ 
+ <link rel="stylesheet" href="../rstudio.css" type="text/css"/>
+ 
+diff -Naur rstudio-1.1.453-Orig/src/gwt/www/expired.htm rstudio-1.1.453/src/gwt/www/expired.htm
+--- rstudio-1.1.453-Orig/src/gwt/www/expired.htm	2018-05-15 02:19:30.000000000 +0800
++++ rstudio-1.1.453/src/gwt/www/expired.htm	2018-10-24 12:18:28.471689792 +0800
+@@ -16,7 +16,7 @@
+ 
+ <head>
+ 
+-<title>RStudio Server Expired</title>
++<title>AlphienStudio Server Expired</title>
+ <link rel="shortcut icon" href="images/favicon.ico" />
+ 
+ <style type="text/css"/>
+@@ -70,7 +70,7 @@
+ 
+ </head>
+ 
+-<h3 id="banner"><a href="http://www.rstudio.com"><img src="images/rstudio.png" width="78" height="24" title="RStudio"/></a></h3>
++<h3 id="banner"><a href="https://studio.alphien.com"><img src="images/rstudio.png" width="78" height="24" title="AlphienStudio"/></a></h3>
+ 
+ <table id="border" align="center">
+   <tr>
+diff -Naur rstudio-1.1.453-Orig/src/gwt/www/index.htm rstudio-1.1.453/src/gwt/www/index.htm
+--- rstudio-1.1.453-Orig/src/gwt/www/index.htm	2018-05-15 02:19:30.000000000 +0800
++++ rstudio-1.1.453/src/gwt/www/index.htm	2018-10-24 12:18:28.471689792 +0800
+@@ -21,7 +21,7 @@
+     <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+     <meta name="gwt:property" content="compiler.stackMode=#compiler_stack_mode#"/>
+     <link rel="shortcut icon" href="images/favicon.ico" />
+-    <title>RStudio</title>
++    <title>AlphienStudio</title>
+     #!head_tags#
+     <script type="text/javascript" language="javascript" src="#!gwt_prefix#rstudio/rstudio.nocache.js"></script>
+   
+diff -Naur rstudio-1.1.453-Orig/src/gwt/www/offline.htm rstudio-1.1.453/src/gwt/www/offline.htm
+--- rstudio-1.1.453-Orig/src/gwt/www/offline.htm	2018-05-15 02:19:30.000000000 +0800
++++ rstudio-1.1.453/src/gwt/www/offline.htm	2018-10-24 12:18:28.471689792 +0800
+@@ -16,7 +16,7 @@
+ 
+ <head>
+ 
+-<title>RStudio Offline</title>
++<title>AlphienStudio Offline</title>
+ <link rel="shortcut icon" href="images/favicon.ico" />
+ 
+ <style type="text/css"/>
+@@ -70,7 +70,7 @@
+ 
+ </head>
+ 
+-<h3 id="banner"><a href="http://www.rstudio.com"><img src="images/rstudio.png" width="78" height="24" title="RStudio"/></a></h3>
++<h3 id="banner"><a href="https://studio.alphien.com"><img src="images/rstudio.png" width="78" height="24" title="AlphienStudio"/></a></h3>
+ 
+ <table id="border" align="center">
+   <tr>
+diff -Naur rstudio-1.1.453-Orig/src/gwt/www/progress.htm rstudio-1.1.453/src/gwt/www/progress.htm
+--- rstudio-1.1.453-Orig/src/gwt/www/progress.htm	2018-05-15 02:19:30.000000000 +0800
++++ rstudio-1.1.453/src/gwt/www/progress.htm	2018-10-24 12:18:28.471689792 +0800
+@@ -16,7 +16,7 @@
+ <html>
+ 
+ <head>
+-<title>RStudio</title>
++<title>AlphienStudio</title>
+ 
+ <link rel="stylesheet" href="rstudio.css" type="text/css"/>
+ <link rel="shortcut icon" href="images/favicon.ico" />
+diff -Naur rstudio-1.1.453-Orig/src/gwt/www/projectnotfound.htm rstudio-1.1.453/src/gwt/www/projectnotfound.htm
+--- rstudio-1.1.453-Orig/src/gwt/www/projectnotfound.htm	2018-05-15 02:19:30.000000000 +0800
++++ rstudio-1.1.453/src/gwt/www/projectnotfound.htm	2018-10-24 12:18:28.471689792 +0800
+@@ -1,7 +1,7 @@
+ <html>
+ 
+ <head>
+-<title>RStudio: Project Not Found</title>
++<title>AlphienStudio: Project Not Found</title>
+ 
+ <link rel="stylesheet" href="rstudio.css" type="text/css"/>
+ <link rel="shortcut icon" href="images/favicon.ico" />
+@@ -21,7 +21,7 @@
+ 
+ <body>
+ 
+-<h3 id="banner"><a href="http://www.rstudio.com"><img src="images/rstudio.png" width="78" height="24" title="RStudio"/></a></h3>
++<h3 id="banner"><a href="https://studio.alphien.com"><img src="images/rstudio.png" width="78" height="24" title="AlphienStudio"/></a></h3>
+ 
+ <p>RStudio could not open the requested project for one of the following 
+     reasons:</p>
+diff -Naur rstudio-1.1.453-Orig/src/gwt/www/templates/encrypted-sign-in.htm rstudio-1.1.453/src/gwt/www/templates/encrypted-sign-in.htm
+--- rstudio-1.1.453-Orig/src/gwt/www/templates/encrypted-sign-in.htm	2018-05-15 02:19:30.000000000 +0800
++++ rstudio-1.1.453/src/gwt/www/templates/encrypted-sign-in.htm	2018-10-24 12:18:28.471689792 +0800
+@@ -18,7 +18,7 @@
+ 
+ <head>
+ 
+-<title>RStudio Sign In</title>
++<title>AlphienStudio Sign In</title>
+ <link rel="shortcut icon" href="images/favicon.ico" />
+ 
+ <script language='javascript'>
+@@ -164,7 +164,7 @@
+ 
+ </head>
+ 
+-<h3 id="banner"><a href="http://www.rstudio.com"><img src="images/rstudio.png" width="78" height="24" title="RStudio"/></a></h3>
++<h3 id="banner"><a href="https://studio.alphien.com"><img src="images/rstudio.png" width="78" height="24" title="AlphienStudio"/></a></h3>
+ 
+ <div id="errorpanel">
+ <p>Error: #errorMessage#</p>
+@@ -174,7 +174,7 @@
+ <table id="border" align="center">
+   <tr>
+     <td>
+-      <h2 id="caption">Sign in to RStudio</h2>
++      <h2 id="caption">Sign in to AlphienStudio</h2>
+       <p>
+          <label for="username">Username:</label><br />
+          <input type='text' 
+diff -Naur rstudio-1.1.453-Orig/src/gwt/www/unsupported_browser.htm rstudio-1.1.453/src/gwt/www/unsupported_browser.htm
+--- rstudio-1.1.453-Orig/src/gwt/www/unsupported_browser.htm	2018-05-15 02:19:30.000000000 +0800
++++ rstudio-1.1.453/src/gwt/www/unsupported_browser.htm	2018-10-24 12:18:28.471689792 +0800
+@@ -1,7 +1,7 @@
+ <html>
+ 
+ <head>
+-<title>RStudio: Browser Not Supported</title>
++<title>AlphienStudio: Browser Not Supported</title>
+ 
+ <link rel="stylesheet" href="rstudio.css" type="text/css"/>
+ <link rel="shortcut icon" href="images/favicon.ico" />
+@@ -21,7 +21,7 @@
+ 
+ <body>
+ 
+-<h3 id="banner"><a href="http://www.rstudio.com"><img src="images/rstudio.png" width="78" height="24" title="RStudio"/></a></h3>
++<h3 id="banner"><a href="https://studio.alphien.com"><img src="images/rstudio.png" width="78" height="24" title="AlphienStudio"/></a></h3>
+ 
+ <p>Your web browser is not supported by RStudio.</p> 
+ 
+diff -Naur rstudio-1.1.453-Orig/src/gwt/www/webkit.nocache.html rstudio-1.1.453/src/gwt/www/webkit.nocache.html
+--- rstudio-1.1.453-Orig/src/gwt/www/webkit.nocache.html	2018-05-15 02:19:30.000000000 +0800
++++ rstudio-1.1.453/src/gwt/www/webkit.nocache.html	2018-10-24 12:18:28.471689792 +0800
+@@ -50,6 +50,7 @@
+           document.write('\n' + result);
+           
+           desktop.checkForUpdates();
++          desktop.showAboutAlphienDialog();
+           desktop.showAboutDialog();
+           desktop.bringMainFrameToFront();
+           
