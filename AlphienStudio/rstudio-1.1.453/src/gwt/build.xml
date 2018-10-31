@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+#
+# build.xml
+#
+# Copyright (C) 2009-17 by RStudio, Inc.
+#
+# This program is licensed to you under the terms of version 3 of the
+# GNU Affero General Public License. This program is distributed WITHOUT
+# ANY EXPRESS OR IMPLIED WARRANTY, INCLUDING THOSE OF NON-INFRINGEMENT,
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. Please refer to the
+# AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
+#
+-->
+
+<project name="client" default="build" basedir=".">
+
+   <taskdef name="jscomp"
+            classname="com.google.javascript.jscomp.ant.CompileTask"
+            classpath="./tools/compiler/compiler.jar"/>
+   <!-- Configure path to GWT SDK -->
+   <property name="gwt.sdk" value="lib/gwt/2.7.0"/>
+
+   <property name="gwt.extra.args" value=""/>
+   <property name="gwt.main.module" value="org.rstudio.studio.RStudio"/>
+   <property name="ace.bin" value="src/org/rstudio/studio/client/workbench/views/source/editors/text/ace"/>
+
+   <path id="project.class.path">
+      <pathelement location="bin"/>
+      <fileset dir="${gwt.sdk}" includes="*.jar"/>
+      <fileset dir="lib/gin/1.5" includes="*.jar"/>
+   </path>
+
+   <path id="test.class.path">
+      <pathelement location="bin"/>
+      <fileset dir="lib/selenium/2.37.0" includes="*.jar"/>
+      <fileset dir="lib/selenium/2.37.0/libs" includes="*.jar"/>
+   </path>
+
+   <path id="unittest.class.path">
+      <fileset dir="lib/" includes="*.jar"/>
+   </path>
+
+   <fileset id="acesupport.sources.fileset" dir="acesupport">
+      <include name="**/*.js"/>
+      <exclude name="extern.js"/>
+   </fileset>
+
+   <path id="acesupport.sources">
+      <fileset refid="acesupport.sources.fileset"/>
+   </path>
+
+   <target name="ext">
+      <jscomp compilationLevel="simple" warning="default"
+              debug="false" output="${ace.bin}/acesupport.js">
+              
+          <externs dir="acesupport">
+             <file name="extern.js"/>
+          </externs>
+
+          <path refid="acesupport.sources"/>
+
+      </jscomp>
+   </target>
+
+   <target name="acesupport" description="Compile (debugging) Ace support">
+      <concat destfile="${ace.bin}/acesupport.js">
+         <fileset refid="acesupport.sources.fileset"/>
+      </concat>
+      <echo>Concatenated acesupport files to 'acesupport.js'</echo>
+   </target>
+
+   <target name="javac" description="Compile java source">
+      <mkdir dir="bin"/>
+      <!-- Compile com.google stuff separately from org.rstudio stuff since
+         theirs have lots of deprecation warnings we can't do anything about -->
+      <javac srcdir="src" includes="com/google/**" encoding="utf-8"
+             destdir="bin"
+             source="1.5" target="1.5" nowarn="true" deprecation="false"
+             debug="true" debuglevel="lines,vars,source"
+             includeantruntime="false">
+         <classpath refid="project.class.path"/>
+         <compilerarg value="-Xlint:-deprecation"/>
+      </javac>
+      <javac srcdir="src" includes="org/rstudio/**" encoding="utf-8"
+             destdir="bin"
+             source="1.5" target="1.5" nowarn="true" deprecation="true"
+             debug="true" debuglevel="lines,vars,source"
+             includeantruntime="false"
+             fork="true">
+         <classpath refid="project.class.path"/>
+         <compilerarg value="-Xlint"/>
+         <compilerarg value="-J-Xms256m"/>
+         <compilerarg value="-J-Xmx512m"/>
+      </javac>
+      <copy todir="bin">
+         <fileset dir="src" excludes="**/*.java"/>
+      </copy>
+   </target>
+
+   <target name="gwtc" depends="ext,javac" description="GWT compile to JavaScript">
+      <java failonerror="true" fork="true" classname="com.google.gwt.dev.Compiler">
+         <classpath>
+            <pathelement location="src"/>
+            <path refid="project.class.path"/>
+         </classpath>
+         <!-- add jvmarg -Xss16M or similar if you see a StackOverflowError -->
+         <jvmarg value="-Xmx1536M"/>
+         <arg value="-war"/>
+         <arg value="www"/>
+         <arg value="-localWorkers"/>
+         <arg value="2"/>
+         <arg value="-XdisableClassMetadata"/>
+         <arg value="-XdisableCastChecking"/>
+         <arg line="-strict"/>
+         <arg line="-gen gen"/>
+         <!--<arg line="-style PRETTY"/>-->
+         <arg line="-extra extras"/>
+         <arg line="${gwt.extra.args}"/>
+         <!-- Additional arguments like -logLevel DEBUG -->
+         <arg value="${gwt.main.module}"/>
+      </java>
+   </target>
+
+   <target name="soyc" description="Generate and show SOYC report">
+      <antcall target="gwtc">
+         <param name="gwt.main.module" value="org.rstudio.studio.RStudioDraft"/>
+         <param name="gwt.extra.args" value="${gwt.extra.args} -compileReport"/>
+      </antcall>
+      <exec executable="open" os="Mac OS X">
+         <arg file="extras/rstudio/soycReport/compile-report/index.html"/>
+      </exec>
+   </target>
+
+   <target name="draft" description="Compile using GWT's draft mode">
+      <antcall target="gwtc">
+         <param name="gwt.main.module" value="org.rstudio.studio.RStudioDraft"/>
+         <param name="gwt.extra.args" value="${gwt.extra.args} -draftCompile" />
+      </antcall>
+   </target>
+
+   <target name="desktop" depends="acesupport,javac" description="Run development mode">
+      <java failonerror="true" fork="true" classname="com.google.gwt.dev.DevMode">
+         <classpath>
+            <pathelement location="src"/>
+            <path refid="project.class.path"/>
+         </classpath>
+         <jvmarg value="-Xmx2048M"/>
+         <arg value="-war"/>
+         <arg value="www"/>
+         <arg value="-noserver"/>
+         <arg value="-startupUrl"/>
+         <arg value="http://localhost:8787"/>
+         <arg line="-bindAddress 127.0.0.1"/>
+         <arg value="org.rstudio.studio.RStudioDesktopSuperDevMode"/>
+      </java>
+   </target>
+	
+   <target name="devmode" depends="acesupport,javac" description="Run development mode">
+      <java failonerror="true" fork="true" classname="com.google.gwt.dev.DevMode">
+         <classpath>
+            <pathelement location="src"/>
+            <path refid="project.class.path"/>
+         </classpath>
+         <jvmarg value="-Xmx2048M"/>
+         <arg value="-war"/>
+         <arg value="www"/>
+         <arg value="-noserver"/>
+         <arg value="-startupUrl"/>
+         <arg value="http://localhost:8787"/>
+         <arg line="-bindAddress 127.0.0.1"/>
+         <!-- Additional arguments like -logLevel DEBUG -->
+         <arg value="org.rstudio.studio.RStudioSuperDevMode"/>
+      </java>
+   </target>
+
+   <target name="superdevmode" description="Run super dev mode">
+   	<antcall target="gwtc">
+          <param name="gwt.main.module" value="org.rstudio.studio.RStudioSuperDevMode"/>
+   	</antcall>
+      <java failonerror="true" fork="true" classname="com.google.gwt.dev.codeserver.CodeServer">
+         <classpath>
+            <pathelement location="src"/>
+            <path refid="project.class.path"/>
+         </classpath>
+         <jvmarg value="-Xmx2048M"/>
+      	<arg value="-src"/>
+      	<arg value = "src"/>
+         <arg value="org.rstudio.studio.RStudioSuperDevMode"/>
+      </java>
+   </target>
+
+   <target name="build" depends="gwtc" description="Build this project" />
+
+   <target name="clean" description="Cleans this project">
+      <delete dir="bin" failonerror="false" />
+      <delete dir="gwt-unitCache" failonerror="false" />
+      <delete dir="www/rstudio" failonerror="false" />
+      <delete file="${ace.bin}/acesupport.js" failonerror="false" />
+      <delete dir="gen" failonerror="false" />
+      <delete dir="extras" failonerror="false" />
+   </target>
+
+   <target name="test" description="Runs Selenium tests" depends="build-tests">
+      <parallel>
+         <daemons>
+            <exec executable="lib/selenium/chromedriver/2.7/chromedriver-mac" os="Mac OS X" />
+            <exec executable="lib/selenium/chromedriver/2.7/chromedriver-win.exe" os="Windows NT" />
+            <exec executable="lib/selenium/chromedriver/2.7/chromedriver-linux" os="Linux" />
+         </daemons>
+         <sequential>
+            <java failonerror="true" fork="true" classname="org.junit.runner.JUnitCore">
+               <classpath>
+                  <pathelement location="src"/>
+                  <path refid="test.class.path"/>
+               </classpath>
+               <arg value="org.rstudio.studio.selenium.RStudioTestSuite"/>
+            </java>
+         </sequential>
+      </parallel>
+   </target>
+
+   <target name="build-tests" description="Builds Selenium tests">
+      <javac srcdir="test" includes="org/rstudio/studio/selenium/**" encoding="utf-8"
+             destdir="bin"
+             source="1.5" target="1.5" nowarn="true" deprecation="true"
+             debug="true" debuglevel="lines,vars,source"
+             includeantruntime="false">
+         <classpath refid="test.class.path"/>
+      </javac>
+   </target>
+
+   <target name="build-unittests" description="Builds JUnit unit tests">
+       <javac srcdir="test" includes="org/rstudio/studio/client/**" encoding="utf-8"
+             destdir="bin"
+             source="1.5" target="1.5" nowarn="true" deprecation="true"
+             debug="true" debuglevel="lines,vars,source"
+             includeantruntime="false">
+         <classpath refid="unittest.class.path"/>
+         <classpath refid="project.class.path"/>
+      </javac>
+   </target>
+
+   <target name="unittest" description="Runs JUnit unit tests" depends="build-unittests">
+     <java failonerror="true" fork="true" classname="org.junit.runner.JUnitCore">
+        <classpath>
+            <pathelement location="test"/>
+            <pathelement location="src"/>
+        </classpath>
+        <classpath refid="project.class.path"/>
+        <classpath refid="unittest.class.path"/>
+        <arg value="org.rstudio.studio.client.RStudioUnitTestSuite"/>
+     </java>
+   </target>
+</project>

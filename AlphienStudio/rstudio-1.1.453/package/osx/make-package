@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+set -e
+
+PACKAGE_DIR=`pwd`
+
+if [ "$1" == "clean" ]
+then
+   # remove existing build dir
+   rm -rf build
+   
+   # clean out ant build
+   cd ../../src/gwt
+   ant clean
+   cd $PACKAGE_DIR
+fi
+
+mkdir -p build
+cd build
+rm -f CMakeCache.txt
+rm -rf build/_CPack_Packages
+
+# if we have a 10.7 SDK, we can produce a Snow Leopard-compatible build
+if [ -x /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.7.sdk ]; then
+   export CMAKE_OSX_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.7.sdk
+   export CMAKE_OSX_DEPLOYMENT_TARGET="10.6"
+fi
+
+cmake -DRSTUDIO_TARGET=Desktop \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DRSTUDIO_PACKAGE_BUILD=1 \
+      ../../..
+
+make
+
+cpack -G DragNDrop
+
+cd ..

@@ -1,0 +1,44 @@
+FROM centos:6
+
+RUN set -x \
+    && yum install epel-release -y
+
+RUN yum install -y \
+    ant \
+    boost-devel \
+    bzip2-devel \
+    cmake \
+    gcc \
+    gcc-c++ \
+    git \
+    gstreamer-devel \
+    gstreamer-plugins-base-devel \
+    java-1.6.0-openjdk  \
+    libffi \
+    libuuid-devel \
+    make \
+    openssl-devel \
+    pam-devel \
+    pango-devel \
+    R \
+    rpmdevtools \
+    sudo \
+    wget \
+    xml-commons-apis \
+    zlib-devel
+
+## run install-boost twice - boost exits 1 even though it has installed good enough for our uses.
+## https://github.com/rstudio/rstudio/blob/master/vagrant/provision-primary-user.sh#L12-L15
+COPY dependencies/common/install-boost /tmp/
+RUN bash /tmp/install-boost || bash /tmp/install-boost
+
+# install cmake
+COPY package/linux/install-dependencies /tmp/
+RUN bash /tmp/install-dependencies
+
+# create jenkins user, make sudo. try to keep this toward the bottom for less cache busting
+ARG JENKINS_GID=999
+ARG JENKINS_UID=999
+RUN groupadd -g $JENKINS_GID jenkins && \
+    useradd -m -d /var/lib/jenkins -u $JENKINS_UID -g jenkins jenkins && \
+    echo "jenkins ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
