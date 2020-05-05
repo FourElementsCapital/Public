@@ -12,10 +12,13 @@ patch -Np1 -i "$WORK_DIR/patch/no-sso.patch"
 mkdir -pv "$BUILD_DIR"
 
 # Change current working directory to build folder
-cd "$BUILD_DIR"
+cd "$BUILD_DIR/../dependencies/linux/"
 
 # Install dependencies for building
-bash "$BUILD_DIR/../dependencies/linux/install-dependencies-debian"
+echo "Installing dependencies"
+./install-dependencies-debian
+
+cd "$BUILD_DIR"
 
 # Prepare alphien studio for server release
 cmake .. -DRSTUDIO_TARGET=Server -DCMAKE_BUILD_TYPE=Release | tee AlphienStudio-config.log
