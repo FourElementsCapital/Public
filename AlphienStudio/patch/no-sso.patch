@@ -1,6 +1,6 @@
 diff -Naur rstudio-1.1.453-Orig/src/gwt/src/org/rstudio/studio/client/application/ui/AboutAlphienDialogContents.java rstudio-1.1.453/src/gwt/src/org/rstudio/studio/client/application/ui/AboutAlphienDialogContents.java
 --- rstudio-1.1.453-Orig/src/gwt/src/org/rstudio/studio/client/application/ui/AboutAlphienDialogContents.java	2019-03-19 14:21:46.255427967 +0800
-+++ rstudio-1.1.453/src/gwt/src/org/rstudio/studio/client/application/ui/AboutAlphienDialogContents.java	2019-06-07 14:29:09.300262702 +0800
++++ ../rstudio-1.1.453/src/gwt/src/org/rstudio/studio/client/application/ui/AboutAlphienDialogContents.java	2019-06-07 14:29:09.300262702 +0800
 @@ -2,7 +2,7 @@
   *
   * AboutAlphienDialogContents.java
@@ -12,7 +12,7 @@ diff -Naur rstudio-1.1.453-Orig/src/gwt/src/org/rstudio/studio/client/applicatio
   * as published by the Free Software Foundation (https://www.gnu.org/licenses/agpl-3.0.html). 
 diff -Naur rstudio-1.1.453-Orig/src/gwt/src/org/rstudio/studio/client/application/ui/AboutAlphienDialogContents.ui.xml rstudio-1.1.453/src/gwt/src/org/rstudio/studio/client/application/ui/AboutAlphienDialogContents.ui.xml
 --- rstudio-1.1.453-Orig/src/gwt/src/org/rstudio/studio/client/application/ui/AboutAlphienDialogContents.ui.xml	2019-03-19 14:21:46.255427967 +0800
-+++ rstudio-1.1.453/src/gwt/src/org/rstudio/studio/client/application/ui/AboutAlphienDialogContents.ui.xml	2019-06-07 14:30:25.927494336 +0800
++++ ../rstudio-1.1.453/src/gwt/src/org/rstudio/studio/client/application/ui/AboutAlphienDialogContents.ui.xml	2019-06-07 14:30:25.927494336 +0800
 @@ -2,7 +2,7 @@
   -
   - AboutAlphienDialogContents.ui.xml
@@ -42,7 +42,7 @@ diff -Naur rstudio-1.1.453-Orig/src/gwt/src/org/rstudio/studio/client/applicatio
  			text="This program is a free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License version 3 as published by the Free Software Foundation (https://www.gnu.org/licenses/agpl-3.0.html). To request a copy of the software, please contact info@alphien.com."></g:InlineLabel>
 diff -Naur rstudio-1.1.453-Orig/src/gwt/src/org/rstudio/studio/client/application/ui/AboutAlphienDialog.java rstudio-1.1.453/src/gwt/src/org/rstudio/studio/client/application/ui/AboutAlphienDialog.java
 --- rstudio-1.1.453-Orig/src/gwt/src/org/rstudio/studio/client/application/ui/AboutAlphienDialog.java	2019-03-19 14:21:46.255427967 +0800
-+++ rstudio-1.1.453/src/gwt/src/org/rstudio/studio/client/application/ui/AboutAlphienDialog.java	2019-06-07 14:30:50.399248461 +0800
++++ ../rstudio-1.1.453/src/gwt/src/org/rstudio/studio/client/application/ui/AboutAlphienDialog.java	2019-06-07 14:30:50.399248461 +0800
 @@ -2,7 +2,7 @@
   *
   * AboutAlphienDialog.java
@@ -54,7 +54,7 @@ diff -Naur rstudio-1.1.453-Orig/src/gwt/src/org/rstudio/studio/client/applicatio
   * as published by the Free Software Foundation (https://www.gnu.org/licenses/agpl-3.0.html). 
 diff -Naur rstudio-1.1.453-Orig/src/gwt/src/org/rstudio/studio/client/workbench/commands/Commands.cmd.xml rstudio-1.1.453/src/gwt/src/org/rstudio/studio/client/workbench/commands/Commands.cmd.xml
 --- rstudio-1.1.453-Orig/src/gwt/src/org/rstudio/studio/client/workbench/commands/Commands.cmd.xml	2019-03-19 14:21:46.295427659 +0800
-+++ rstudio-1.1.453/src/gwt/src/org/rstudio/studio/client/workbench/commands/Commands.cmd.xml	2019-06-11 17:45:10.317685710 +0800
++++ ../rstudio-1.1.453/src/gwt/src/org/rstudio/studio/client/workbench/commands/Commands.cmd.xml	2019-06-11 17:45:10.317685710 +0800
 @@ -1904,12 +1904,12 @@
          desc="Move selected files or folders"
          rebindable="false"/>
@@ -72,7 +72,7 @@ diff -Naur rstudio-1.1.453-Orig/src/gwt/src/org/rstudio/studio/client/workbench/
          label="Rename Current File..."
 diff -Naur rstudio-1.1.453-Orig/src/gwt/src/org/rstudio/studio/client/workbench/views/files/ui/FileCommandToolbar.java rstudio-1.1.453/src/gwt/src/org/rstudio/studio/client/workbench/views/files/ui/FileCommandToolbar.java
 --- rstudio-1.1.453-Orig/src/gwt/src/org/rstudio/studio/client/workbench/views/files/ui/FileCommandToolbar.java	2019-03-19 14:21:46.323427445 +0800
-+++ rstudio-1.1.453/src/gwt/src/org/rstudio/studio/client/workbench/views/files/ui/FileCommandToolbar.java	2019-03-19 14:42:26.038760657 +0800
++++ ../rstudio-1.1.453/src/gwt/src/org/rstudio/studio/client/workbench/views/files/ui/FileCommandToolbar.java	2019-03-19 14:42:26.038760657 +0800
 @@ -45,9 +45,9 @@
        moreMenu.addItem(commands.copyFile().createMenuItem(false));
        moreMenu.addItem(commands.copyFileTo().createMenuItem(false));
