@@ -30,7 +30,7 @@ sudo apt-get -y install uuid-dev
 # version 1.1.0+ is not compatible with our source code
 candidate=$(apt-cache policy libssl1.0-dev |grep Candidate |awk '{print $2}')
 if which apt-cache > /dev/null ; then
-  if [[ "$candidate" != "(none)" ]] ; then
+  if [[ "$candidate" != "(none)" ]] && [[ -n "$candidate" ]] ; then
     sudo apt-get -y install libssl1.0-dev
   else
     sudo apt-get -y install libssl-dev

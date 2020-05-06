@@ -61,9 +61,9 @@ download () {
 
 	# Invoke downloader
 	if has-command curl; then
-		curl -L -f -C - "$SRC" > "$DST"
+		curl -s -L -f -C - "$SRC" > "$DST"
 	elif has-command wget; then
-		wget -c "$SRC" -O "$DST"
+		wget -q -c "$SRC" -O "$DST"
 	else
 		echo "no downloader detected on this system (requires 'curl' or 'wget')"
 		return 1

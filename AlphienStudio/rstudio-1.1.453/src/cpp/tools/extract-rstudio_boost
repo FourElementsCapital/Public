@@ -27,7 +27,7 @@ mkdir -p $RSTUDIO_BOOST_SRC_DIR
 BOOST_URL=http://sourceforge.net/projects/boost/files/boost/$BOOST_VERSION_NUMBER/$BOOST_TAR/download?use_mirror=autoselect
 if [ "$PLATFORM" == "Darwin" ]
 then
-  curl -L $BOOST_URL > $BOOST_TAR
+  curl -s -L $BOOST_URL > $BOOST_TAR
 else
   wget $BOOST_URL -O $BOOST_TAR
 fi

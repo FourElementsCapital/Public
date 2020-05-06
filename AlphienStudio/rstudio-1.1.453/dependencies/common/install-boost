@@ -43,12 +43,12 @@ then
    if [ ! -f "$BOOST_TAR" ]; then
       if [ "$PLATFORM" == "Darwin" ]
       then
-         curl -L $BOOST_URL > $BOOST_TAR
+         curl -s -L $BOOST_URL > $BOOST_TAR
       else
          # sourceforge uses a certificate that is not compatible with older wget
          # (which doesn't realize that *.sourceforge.net should match 
          # sourceforge.net)
-         wget -c --no-check-certificate $BOOST_URL -O $BOOST_TAR
+         wget -q -c --no-check-certificate $BOOST_URL -O $BOOST_TAR
       fi
    fi
    
